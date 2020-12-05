@@ -59,9 +59,36 @@ Otherwise you can run the jar as usual:
     $ java -cp target/mqhub-0.1.0-standalone.jar mqhub.core
 
 
+## Logging
+
+With the default configuration the logging is simply done to the
+console (stdout).  If anything more sophisticated is required you need
+to specify your logging configuration in the `:logging` map entry.
+
+Example:
+
+``` clojure
+{:logging {:level :debug
+		   :console false
+		   :files ["/var/log/standard.log"
+				   {:file "/var/log/standard-json.log" :encoder :json}]
+		   :file {:file "/var/log/file.log" :encoder :json}
+		   :appenders [{:appender :rolling-file
+						:rolling-policy :fixed-window
+						:triggering-policy :size-based
+						:encoder  :pattern
+						:pattern  "%p [%d] %t - %c %m%n"
+						:file     "/var/log/rolling-pattern.log"}]}}
+```
+
+The above configuretion would not make much sense, but it should give
+an idea of what you can do.  See https://github.com/pyr/unilog for
+details.
+
+
 ## Options
 
-So far, none.
+So far, the configuration file should be all you need.
 
 
 ### Bugs
