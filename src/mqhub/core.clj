@@ -1,12 +1,13 @@
 (ns mqhub.core
-  (:require [clojurewerkz.machine-head.client :as mh]
+  (:require [clojure.tools.logging :as log]
+            [clojure.java.io :as io]
+            [unilog.config  :refer [start-logging!]]
+            [clojurewerkz.machine-head.client :as mh]
             [cprop.core :as cprop]
             [cheshire.core :as json]
             [clojure.string :as s]
             [camel-snake-kebab.core :as csk]
-            [postal.core :as post]
-            [clojure.tools.logging :as log]
-            [clojure.java.io :as io])
+            [postal.core :as post])
   (:gen-class))
 
 
@@ -36,29 +37,27 @@
 (defn parse-time [s]
   (java.time.LocalDateTime/parse s))
 
-(defn parse-data [topic data]
-  (if (telemetry? topic)
-    (-> (json/parse-string data csk/->kebab-case-keyword)
-        (update :time parse-time)
-        (update-in [:energy :total-start-time] parse-time))
-    data))
+(defn parse-data [data]
+  (-> (json/parse-string data csk/->kebab-case-keyword)
+      (update :time parse-time)
+      (update-in [:energy :total-start-time] parse-time)))
 
 (defn telemetry-printer [topic payload]
-  (prn topic (parse-data topic payload)))
+  (prn topic (parse-data payload)))
 
-(defn assoc-device [place device k v]
-  (swap! devices update-in [place device] assoc k v))
+(defn assoc-device [topic k v]
+  (swap! devices update topic assoc k v))
 
-(defn dissoc-device [place device k]
-  (swap! devices update-in [place device] dissoc k))
+(defn dissoc-device [topic k]
+  (swap! devices update topic dissoc k))
 
-(defn update-device [place device k f & args]
-  (apply swap! devices update-in [place device] update k f args))
+(defn update-device [topic k f & args]
+  (apply swap! devices update topic update k f args))
 
-(defmulti notify (fn [action place device] (:type action)))
+(defmulti notify (fn [action topic] (:type action)))
 
 (defmethod notify :mail
-  [action place device]
+  [action topic]
   ;; allow the configuration file to override the host, the from, the
   ;; body and the subject
   (post/send-message (merge {:host "localhost"}
@@ -66,7 +65,7 @@
                             (:server action))
                      (merge {:from "mqhub@localhost"
                              :subject (str "Notification from mqhub")
-                             :body (str device " at " place " triggered a notification fo you.")}
+                             :body (str topic " triggered a notification for you.")}
                             (conf :smtp :message)
                             (:message action))))
 
@@ -74,62 +73,60 @@
 
 (defn cma
   "Calculate the Cumulative Moving Average of `x`."
-  [place device x]
-  (let [old-avg (get-in @devices [place device :avg] x)
-        samples (conf :devices place device :avg-samples)
-        avg (float                    ; avoid accumulating huge ratios
-             (+ old-avg
-                (/ (- x old-avg)
-                   (inc (or samples default-avg-samples)))))]
-    (assoc-device place device :avg avg)
-    avg))
+  [samples old-avg new-value]
+  (let [old-avg (or old-avg new-value)]
+    (float                    ; avoid accumulating huge ratios
+     (+ old-avg
+        (/ (- new-value old-avg)
+           (inc (or samples default-avg-samples)))))))
 
-(defn telemetry-listener [topic payload]
-  (let [{:keys [place device]} topic
-        config (conf :devices place device)]
-    (when (and (telemetry? topic)
-               config)
-      (let [{:keys [telemetry threshold hysteresis trigger action]} config
-            data (parse-data topic payload)
-            state (get-in @devices [place device :state] :off)
-            avg-telemetry (cma place device (get-in data telemetry))
-            on-threshold (* threshold (+ 1 hysteresis))
-            off-threshold (* threshold (- 1 hysteresis))
-            current-state (cond (< avg-telemetry off-threshold) :off
-                                (> avg-telemetry on-threshold) :on
-                                :else state)]
-        (log/debug "average telemetry for" (str device "@" place ":")
-                   avg-telemetry (str "(" current-state ")"))
-        (when (not= state current-state)
-          (assoc-device place device :state current-state)
-          (log/debug "switching state of" (str device "@" place ":")
-                     (str state "->" current-state))
-          (when (or (and (= current-state :on) (= trigger :off-to-on))
-                    (and (= current-state :off) (= trigger :on-to-off)))
-            (notify action place device)
-            (log/info "device" device "@" place
-                      "triggered action" (:type action))))))))
+(defn make-telemetry-listener
+  [config]
+  (fn [topic payload]
+    (let [{:keys [telemetry threshold hysteresis trigger action]} config
+          data (parse-data payload)
+          state (get-in @devices [topic :state] :off)
+          avg-telemetry (cma (get config :avg-samples) (get-in @devices [topic :avg]) (get-in data telemetry))
+          on-threshold (* threshold (+ 1 hysteresis))
+          off-threshold (* threshold (- 1 hysteresis))
+          current-state (cond (< avg-telemetry off-threshold) :off
+                              (> avg-telemetry on-threshold) :on
+                              :else state)]
+      (assoc-device topic :avg avg-telemetry)
+      (log/debug "average telemetry for" topic ":"
+                 avg-telemetry (str "(" current-state ")"))
+      (when (not= state current-state)
+        (assoc-device topic :state current-state)
+        (log/debug "switching state of" topic ":" state "->" current-state)
+        (when (or (and (= current-state :on) (= trigger :off-to-on))
+                  (and (= current-state :off) (= trigger :on-to-off)))
+          (notify action topic)
+          (log/info "topic" topic
+                    "triggered action" (:type action)))))))
 
 (defn subscribe [conn topic f]
   (mh/subscribe conn topic
                 (fn [topic metadata payload]
                   (try
-                    (let [topic (parse-topic topic)
-                          payload (String. payload "UTF-8")]
+                    (let [payload (String. payload "UTF-8")]
                       (log/debug "received" topic ":" payload)
                       (f topic payload))
                     (catch Exception e
                       (log/error e "Error in topic listener.")
                       (System/exit 2))))))
 
-(defn start-monitor [listener]
-  (log/info "Monitoring:" (map (juxt key (comp keys val)) (conf :devices)))
+(defn start-monitor [make-listener]
+  (log/info "Monitoring:" (s/join ", " (keys (conf :devices))))
   (let [conn (mh/connect (conf :mqtt :broker) {:client-id (conf :mqtt :client-id)})]
-    (subscribe conn {(conf :mqtt :topic) 0} listener)
+    (doseq [[topic configuration] (conf :devices)]
+      (subscribe conn {topic 0} (make-listener configuration)))
     (mh/publish conn "hello" "mqhub connected")))
 
+#_(log/debug "foo")
+
 (defn -main [& args]
-  (start-monitor telemetry-listener)
+  (start-logging! (conf :logging))
+  (start-monitor make-telemetry-listener)
   (println "Monitor started.  Type Ctrl-C to exit.")
   (while true
     (Thread/sleep 1000)))

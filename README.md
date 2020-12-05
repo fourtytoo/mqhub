@@ -30,7 +30,8 @@ configuration file ~/.mqhub.  Something along these lines:
                  :ssl true}
         :message {:from "mqhub@localhost"
                   :to "myself@mydomain.me"}}
- :devices {"home" {"ss01" {:telemetry [:energy :power]
+ :devices {"tele/home/ss01/SENSOR"
+                          {:telemetry [:energy :power]
                            :threshold 20 ; Watts
                            ;; avoid switching back and forth the
                            ;; on/off state
@@ -41,23 +42,9 @@ configuration file ~/.mqhub.  Something along these lines:
                            :action {:type :mail
                                     :message {:subject "Washing Machine"
                                               :body "The washing is ready to hang!"}}}
-                   "ss02" {
+           "tele/home/ss02/SENSOR" {
 				   ;; configuration of another device
-				   }}
-           "office" {"ss01" {
-		       ;; ... and so on, and on
-		   }}}}
-```
-
-The configuration above is meant to monitor topics like
-"tele/home/ss01/SENSOR" (the default structure).  If your sensors
-produce something else, you should change the `:mqtt
-:topic-structure`.  By default it is `[:type :place :device :what]`.
-If for instance you sensors were to produce topics like
-"home/ssh01/tele/SENSOR", your configuration will have something like
-
-``` clojure
-{:mqtt {:topic-structure [:place :device :type :what]}}
+				   }}}
 ```
 
 ## Usage

@@ -1,7 +1,11 @@
+;;;
+;;; Default config.edn to be included with the jar file.  The purpose
+;;; of this configuration is to give some reasonable defaults for some
+;;; necessary parameters.
+;;;
+
 {:mqtt {:broker "tcp://localhost:1883"
-        :client-id "mqhub"
-        :topic "tele/#"
-        :topic-structure [:type :place :device :what]}
+        :client-id "mqhub"}
  :smtp {:server {:host "smtp.gmail.com"
                  :user "your.name@gmail.com"
                  ;; you better store it in the ~/.mqhub file
@@ -9,4 +13,6 @@
                  :ssl true}
         :message {:from "mqhub@loaclhost"
                   :to "your.name@gmail.com"}}
- :devices {}}
+ :devices {}
+ :logging {:level   :info
+           :console true}}
