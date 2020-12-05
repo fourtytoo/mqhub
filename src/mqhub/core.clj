@@ -31,7 +31,7 @@
 
 (defn telemetry? [topic]
   (and (= "tele" (:type topic))
-       (= "SENSOR" (:rest topic))))
+       (= "SENSOR" (:what topic))))
 
 (defn parse-time [s]
   (java.time.LocalDateTime/parse s))
