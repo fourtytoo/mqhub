@@ -67,7 +67,7 @@ can simply:
 
 	$ mqhub
 	
-Otherwise you can run the jar as ussual:
+Otherwise you can run the jar as usual:
 
     $ java -cp target/mqhub-0.1.0-standalone.jar mqhub.core
 
