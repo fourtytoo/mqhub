@@ -49,6 +49,17 @@ configuration file ~/.mqhub.  Something along these lines:
 		   }}}}
 ```
 
+The configuration above is meant to monitor topics like
+"tele/home/ss01/SENSOR" (the default structure).  If your sensors
+produce something else, you should change the `:mqtt
+:topic-structure`.  By default it is `[:type :place :device :what]`.
+If for instance you sensors were to produce topics like
+"home/ssh01/tele/SENSOR", your configuration will have something like
+
+``` clojure
+{:mqtt {:topic-structure [:place :device :type :what]}}
+```
+
 ## Usage
 
 If you have installed the mqhub shell script as indicated above, you
