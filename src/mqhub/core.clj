@@ -123,6 +123,7 @@
                       (System/exit 2))))))
 
 (defn start-monitor [listener]
+  (log/info "Monitoring:" (map (juxt key (comp keys val)) (conf :devices)))
   (let [conn (mh/connect (conf :mqtt :broker) {:client-id (conf :mqtt :client-id)})]
     (subscribe conn {(conf :mqtt :topic) 0} listener)
     (mh/publish conn "hello" "mqhub connected")))
