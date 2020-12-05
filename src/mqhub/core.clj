@@ -73,7 +73,7 @@
 (def default-avg-samples 5)
 
 (defn cma
-  "Calculate the Compound Moving Average of `x`."
+  "Calculate the Cumulative Moving Average of `x`."
   [place device x]
   (let [old-avg (get-in @devices [place device :avg] x)
         samples (conf :devices place device :avg-samples)
