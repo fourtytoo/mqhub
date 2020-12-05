@@ -1,0 +1,12 @@
+{:mqtt {:broker "tcp://localhost:1883"
+        :client-id "mqhub"
+        :topic "tele/#"
+        :topic-structure [:type :place :device :what]}
+ :smtp {:server {:host "smtp.gmail.com"
+                 :user "your.name@gmail.com"
+                 ;; you better store it in the ~/.mqhub file
+                 :pass "somesecret"
+                 :ssl true}
+        :message {:from "mqhub@loaclhost"
+                  :to "your.name@gmail.com"}}
+ :devices {}}
