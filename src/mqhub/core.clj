@@ -42,8 +42,10 @@
       (update :time parse-time)
       (update-in [:energy :total-start-time] parse-time)))
 
-(defn telemetry-printer [topic payload]
-  (prn topic (parse-data payload)))
+(defn make-telemetry-printer
+  [config]
+  (fn [topic payload]
+    (prn topic (parse-data payload))))
 
 (defn assoc-device [topic k v]
   (swap! devices update topic assoc k v))
