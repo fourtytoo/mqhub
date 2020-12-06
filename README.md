@@ -1,6 +1,11 @@
 # mqhub
 
-An IoT device monitor based on MQTT, written in Clojure.
+An IoT device monitor based on MQTT, written in Clojure.  Upon the
+occurrence of a specific event on a given sensor, an action is
+triggered.  Currently, the only action implemented is email, but there
+is no reason you couldn't write your own actions.  The example below
+gives you some clues about the motivation behind this project.
+
 
 ## Installation
 
@@ -10,9 +15,10 @@ Download your copy or clone the github repo.  Then compile:
 
 To install the jar and the shell script:
 
-	$ cp target/mqhub<yourversion>.jar ~/bin/mqhub.jar
+	$ cp target/mqhub<version_number>-standalone.jar ~/bin/mqhub.jar
 	$ cp mqhub.sh ~/bin/mqhub
 	$ chmod u+x ~/bin/mqhub
+
 
 ## Configuration
 
@@ -47,6 +53,7 @@ configuration file ~/.mqhub.  Something along these lines:
 				   }}}
 ```
 
+
 ## Usage
 
 If you have installed the mqhub shell script as indicated above, you
@@ -56,7 +63,7 @@ can simply:
 	
 Otherwise you can run the jar as usual:
 
-    $ java -cp target/mqhub-0.1.0-standalone.jar mqhub.core
+    $ java -cp target/mqhub-<version_number>-standalone.jar mqhub.core
 
 
 ## Logging
