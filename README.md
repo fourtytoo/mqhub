@@ -84,7 +84,7 @@ Example:
 						:file     "/var/log/rolling-pattern.log"}]}}
 ```
 
-The above configuretion would not make much sense, but it should give
+The above configuration would not make much sense, but it should give
 an idea of what you can do.  See https://github.com/pyr/unilog for
 details.
 
