@@ -121,8 +121,6 @@
       (subscribe conn {topic 0} (make-listener configuration)))
     (mh/publish conn "hello" "mqhub connected")))
 
-#_(log/debug "foo")
-
 (defn -main [& args]
   (start-logging! (conf :logging))
   (start-monitor make-telemetry-listener)
