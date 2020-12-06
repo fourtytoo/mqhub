@@ -68,7 +68,10 @@ to specify your logging configuration in the `:logging` map entry.
 Example:
 
 ``` clojure
-{:logging {:level :debug
+{:mqtt { ... }
+ :smtp { ... }
+ :devices { ... }
+ :logging {:level :debug
 		   :console false
 		   :files ["/var/log/standard.log"
 				   {:file "/var/log/standard-json.log" :encoder :json}]
