@@ -50,9 +50,6 @@
 (defn assoc-device [topic k v]
   (swap! devices update topic assoc k v))
 
-(defn dissoc-device [topic k]
-  (swap! devices update topic dissoc k))
-
 (defn update-device [topic k f & args]
   (apply swap! devices update topic update k f args))
 
