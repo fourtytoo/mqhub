@@ -108,7 +108,7 @@ Likely.
 
 ## License
 
-Copyright © 2020 Walter C. Pelissero <walter@pelissero.de>
+Copyright © 2020-2021 Walter C. Pelissero
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
